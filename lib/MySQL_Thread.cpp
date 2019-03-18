@@ -270,6 +270,8 @@ static char * mysql_thread_variables_names[]= {
 	(char *)"max_connections",
 	(char *)"max_stmts_per_connection",
 	(char *)"max_stmts_cache",
+    (char *)"max_concurrency",
+    (char *)"max_concurrency_sleep_us",
 	(char *)"mirror_max_concurrency",
 	(char *)"mirror_max_queue_length",
 	(char *)"default_max_latency_ms",
@@ -381,6 +383,8 @@ MySQL_Threads_Handler::MySQL_Threads_Handler() {
 	variables.max_connections=10*1000;
 	variables.max_stmts_per_connection=20;
 	variables.max_stmts_cache=10000;
+    variables.max_concurrency=64;
+    variables.max_concurrency_sleep_us=1000;
 	variables.mirror_max_concurrency=16;
 	variables.mirror_max_queue_length=32000;
 	variables.default_max_latency_ms=1*1000; // by default, the maximum allowed latency for a host is 1000ms
@@ -638,6 +642,8 @@ int MySQL_Threads_Handler::get_variable_int(char *name) {
 	if (!strcasecmp(name,"max_connections")) return (int)variables.max_connections;
 	if (!strcasecmp(name,"max_stmts_per_connection")) return (int)variables.max_stmts_per_connection;
 	if (!strcasecmp(name,"max_stmts_cache")) return (int)variables.max_stmts_cache;
+    if (!strcasecmp(name,"max_concurrency")) return (int)variables.max_concurrency;
+    if (!strcasecmp(name,"max_concurrency_sleep_us")) return (int)variables.max_concurrency_sleep_us;
 	if (!strcasecmp(name,"mirror_max_concurrency")) return (int)variables.mirror_max_concurrency;
 	if (!strcasecmp(name,"mirror_max_queue_length")) return (int)variables.mirror_max_queue_length;
 	if (!strcasecmp(name,"default_query_delay")) return (int)variables.default_query_delay;
@@ -947,6 +953,14 @@ char * MySQL_Threads_Handler::get_variable(char *name) {	// this is the public f
 		sprintf(intbuf,"%d",variables.max_stmts_cache);
 		return strdup(intbuf);
 	}
+    if (!strcasecmp(name,"max_concurrency")) {
+        sprintf(intbuf,"%d",variables.max_concurrency);
+        return strdup(intbuf);
+    }
+    if (!strcasecmp(name,"max_concurrency_sleep_us")) {
+        sprintf(intbuf,"%d",variables.max_concurrency_sleep_us);
+        return strdup(intbuf);
+    }
 	if (!strcasecmp(name,"mirror_max_concurrency")) {
 		sprintf(intbuf,"%d",variables.mirror_max_concurrency);
 		return strdup(intbuf);
@@ -1453,6 +1467,24 @@ bool MySQL_Threads_Handler::set_variable(char *name, char *value) {	// this is t
 			return false;
 		}
 	}
+    if (!strcasecmp(name,"max_concurrency")) {
+        int intv=atoi(value);
+        if (intv >= 1 && intv <= 8*1024) {
+            variables.max_concurrency=intv;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    if (!strcasecmp(name,"max_concurrency_sleep_us")) {
+        int intv=atoi(value);
+        if (intv >= 0 && intv <= 1000000) {
+            variables.max_concurrency_sleep_us=intv;
+            return true;
+        } else {
+            return false;
+        }
+    }
 	if (!strcasecmp(name,"mirror_max_concurrency")) {
 		int intv=atoi(value);
 		if (intv >= 1 && intv <= 8*1024) {
@@ -3324,6 +3356,8 @@ void MySQL_Thread::refresh_variables() {
 	mysql_thread___max_connections=GloMTH->get_variable_int((char *)"max_connections");
 	mysql_thread___max_stmts_per_connection=GloMTH->get_variable_int((char *)"max_stmts_per_connection");
 	mysql_thread___max_stmts_cache=GloMTH->get_variable_int((char *)"max_stmts_cache");
+    mysql_thread___max_concurrency=GloMTH->get_variable_int((char *)"max_concurrency");
+    mysql_thread___max_concurrency_sleep_us=GloMTH->get_variable_int((char *)"max_concurrency_sleep_us");
 	mysql_thread___mirror_max_concurrency=GloMTH->get_variable_int((char *)"mirror_max_concurrency");
 	mysql_thread___mirror_max_queue_length=GloMTH->get_variable_int((char *)"mirror_max_queue_length");
 	mysql_thread___default_query_delay=GloMTH->get_variable_int((char *)"default_query_delay");

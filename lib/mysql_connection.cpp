@@ -221,6 +221,8 @@ MySQL_Connection::MySQL_Connection() {
 	processing_multi_statement=false;
 	proxy_debug(PROXY_DEBUG_MYSQL_CONNPOOL, 4, "Creating new MySQL_Connection %p\n", this);
 	local_stmts=new MySQL_STMTs_local_v14(false); // false by default, it is a backend
+    thread_running_tickets=5;
+    running=false;
 };
 
 MySQL_Connection::~MySQL_Connection() {
@@ -742,7 +744,15 @@ handler_again:
 		case ASYNC_PING_TIMEOUT:
 			break;
 		case ASYNC_QUERY_START:
-			real_query_start();
+            if (__sync_fetch_and_add(&parent->thread_running,1)>mysql_thread___max_concurrency){
+                do{
+                    usleep(mysql_thread___max_concurrency_sleep_us);
+                    thread_running_tickets--;
+                }while((__sync_fetch_and_add(&parent->thread_running,0)>mysql_thread___max_concurrency) && thread_running_tickets > 0);
+            }
+            thread_running_tickets=5;
+            running=true;
+            real_query_start();
 			__sync_fetch_and_add(&parent->queries_sent,1);
 			__sync_fetch_and_add(&parent->bytes_sent,query.length);
 			myds->sess->thread->status_variables.queries_backends_bytes_sent+=query.length;
@@ -770,7 +780,7 @@ handler_again:
 			break;
 
 		case ASYNC_STMT_PREPARE_START:
-			stmt_prepare_start();
+            stmt_prepare_start();
 			__sync_fetch_and_add(&parent->queries_sent,1);
 			__sync_fetch_and_add(&parent->bytes_sent,query.length);
 			myds->sess->thread->status_variables.queries_backends_bytes_sent+=query.length;
@@ -802,6 +812,14 @@ handler_again:
 			break;
 
 		case ASYNC_STMT_EXECUTE_START:
+            if (__sync_fetch_and_add(&parent->thread_running,1)>mysql_thread___max_concurrency){
+                do{
+                    usleep(mysql_thread___max_concurrency_sleep_us);
+                    thread_running_tickets--;
+                }while((__sync_fetch_and_add(&parent->thread_running,0)>mysql_thread___max_concurrency) && thread_running_tickets > 0);
+            }
+            thread_running_tickets=5;
+            running=true;
 			stmt_execute_start();
 			__sync_fetch_and_add(&parent->queries_sent,1);
 			__sync_fetch_and_add(&parent->bytes_sent,query.stmt_meta->size);
@@ -847,6 +865,8 @@ handler_again:
 			}
 			break;
 		case ASYNC_STMT_EXECUTE_END:
+            running=false;
+            __sync_sub_and_fetch(&parent->thread_running,1);
 			{
 				if (query.stmt_result) {
 					unsigned long long total_size=0;
@@ -1001,6 +1021,8 @@ handler_again:
 			}
 			break;
 		case ASYNC_QUERY_END:
+            running=false;
+            __sync_sub_and_fetch(&parent->thread_running,1);
 			if (mysql) {
 				int _myerrno=mysql_errno(mysql);
 				if (_myerrno == 0) {

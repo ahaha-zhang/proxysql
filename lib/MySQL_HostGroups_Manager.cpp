@@ -265,6 +265,8 @@ MySrvC::MySrvC(char *add, uint16_t p, unsigned int _weight, enum MySerStatus _st
 	comment=strdup(_comment);
 	ConnectionsUsed=new MySrvConnList(this);
 	ConnectionsFree=new MySrvConnList(this);
+    //Add by zhangyanjun:Count the number of connection which is not ASYNC_IDLE
+    thread_running=0;
 }
 
 void MySrvC::connect_error(int err_num) {
@@ -1529,6 +1531,9 @@ MySQL_Connection * MySQL_HostGroups_Manager::get_MyConn_from_pool(unsigned int _
 void MySQL_HostGroups_Manager::destroy_MyConn_from_pool(MySQL_Connection *c, bool _lock) {
 	bool to_del=true; // the default, legacy behavior
 	MySrvC *mysrvc=(MySrvC *)c->parent;
+    if (c->running){
+        __sync_sub_and_fetch(&c->parent->thread_running,1);
+    }
 	if (mysrvc->status==MYSQL_SERVER_STATUS_ONLINE && c->send_quit && queue.size() < __sync_fetch_and_add(&GloMTH->variables.connpoll_reset_queue_length,0)) {
 		if (c->async_state_machine==ASYNC_IDLE) {
 			// overall, the backend seems healthy and so it is the connection. Try to reset it

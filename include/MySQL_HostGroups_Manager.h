@@ -89,6 +89,7 @@ class MySrvC {	// MySQL Server Container
 	unsigned int connect_ERR;
 	// note that these variables are in microsecond, while user defines max lantency in millisecond
 	unsigned int current_latency_us;
+    unsigned int thread_running;
 	unsigned int max_latency_us;
 	time_t time_last_detected_error;
 	unsigned int connect_ERR_at_time_last_detected_error;
