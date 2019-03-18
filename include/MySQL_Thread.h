@@ -392,6 +392,7 @@ class MySQL_Threads_Handler
 		int max_stmts_per_connection;
 		int max_stmts_cache;
         int max_concurrency;
+        int thread_running_tickets;
         int max_concurrency_sleep_us;
 		int mirror_max_concurrency;
 		int mirror_max_queue_length;

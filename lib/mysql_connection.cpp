@@ -221,7 +221,7 @@ MySQL_Connection::MySQL_Connection() {
 	processing_multi_statement=false;
 	proxy_debug(PROXY_DEBUG_MYSQL_CONNPOOL, 4, "Creating new MySQL_Connection %p\n", this);
 	local_stmts=new MySQL_STMTs_local_v14(false); // false by default, it is a backend
-    thread_running_tickets=5;
+    thread_running_tickets=mysql_thread___thread_running_tickets;
     running=false;
 };
 
@@ -750,7 +750,7 @@ handler_again:
                     thread_running_tickets--;
                 }while((__sync_fetch_and_add(&parent->thread_running,0)>mysql_thread___max_concurrency) && thread_running_tickets > 0);
             }
-            thread_running_tickets=5;
+            thread_running_tickets=mysql_thread___thread_running_tickets;
             running=true;
             real_query_start();
 			__sync_fetch_and_add(&parent->queries_sent,1);
@@ -818,7 +818,7 @@ handler_again:
                     thread_running_tickets--;
                 }while((__sync_fetch_and_add(&parent->thread_running,0)>mysql_thread___max_concurrency) && thread_running_tickets > 0);
             }
-            thread_running_tickets=5;
+            thread_running_tickets=mysql_thread___thread_running_tickets;
             running=true;
 			stmt_execute_start();
 			__sync_fetch_and_add(&parent->queries_sent,1);
