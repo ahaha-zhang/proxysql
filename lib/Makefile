@@ -85,14 +85,22 @@ endif
 
 
 MYCFLAGS=$(IDIRS) $(OPTZ) $(DEBUG) -Wall -DGITVERSION=\"$(GIT_VERSION)\" $(NOJEM)
+<<<<<<< HEAD
 MYCXXFLAGS=-std=c++11 $(MYCFLAGS) $(PSQLCH)
+=======
+MYCXXFLAGS=-std=c++11 $(MYCFLAGS)
+>>>>>>> b71e6484964f1ce7ebb806085a6dc6b469fd902d
 
 default: libproxysql.a
 .PHONY: default
 
 _OBJ = c_tokenizer.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+<<<<<<< HEAD
 _OBJ_CXX = ProxySQL_GloVars.oo network.oo debug.oo configfile.oo Query_Cache.oo SpookyV2.oo MySQL_Authentication.oo gen_utils.oo sqlite3db.oo mysql_connection.oo MySQL_HostGroups_Manager.oo mysql_data_stream.oo MySQL_Thread.oo MySQL_Session.oo MySQL_Protocol.oo mysql_backend.oo Query_Processor.oo ProxySQL_Admin.oo MySQL_Monitor.oo MySQL_Logger.oo thread.oo MySQL_PreparedStatement.oo ProxySQL_Cluster.oo SQLite3_Server.oo ClickHouse_Authentication.oo ClickHouse_Server.oo ProxySQL_Statistics.oo Chart_bundle_js.oo ProxySQL_HTTP_Server.oo font-awesome.min.css.oo main-bundle.min.css.oo set_parser.oo
+=======
+_OBJ_CXX = ProxySQL_GloVars.oo network.oo debug.oo configfile.oo Query_Cache.oo SpookyV2.oo MySQL_Authentication.oo gen_utils.oo sqlite3db.oo global_variables.oo mysql_connection.oo MySQL_HostGroups_Manager.oo mysql_data_stream.oo MySQL_Thread.oo MySQL_Session.oo MySQL_Protocol.oo mysql_backend.oo Query_Processor.oo ProxySQL_Admin.oo MySQL_Monitor.oo MySQL_Logger.oo thread.oo MySQL_PreparedStatement.oo
+>>>>>>> b71e6484964f1ce7ebb806085a6dc6b469fd902d
 OBJ_CXX = $(patsubst %,$(ODIR)/%,$(_OBJ_CXX))
 
 %.ko: %.cpp
